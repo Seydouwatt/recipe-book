@@ -19,6 +19,7 @@ export default function App() {
   const loading = useAuthStore((s) => s.loading);
   const loadRecipes = useRecipeStore((s) => s.loadRecipes);
   const loadFavorites = useFavoriteStore((s) => s.loadFavorites);
+  const loadFavoriteCounts = useFavoriteStore((s) => s.loadFavoriteCounts);
 
   useEffect(() => {
     const unsub = initialize();
@@ -27,7 +28,8 @@ export default function App() {
 
   useEffect(() => {
     loadRecipes();
-  }, [loadRecipes]);
+    loadFavoriteCounts();
+  }, [loadRecipes, loadFavoriteCounts]);
 
   useEffect(() => {
     if (user) loadFavorites(user.id);
