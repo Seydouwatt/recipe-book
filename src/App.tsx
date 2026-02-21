@@ -12,6 +12,7 @@ import LoginPage from "./pages/LoginPage";
 import ProfilePage from "./pages/ProfilePage";
 import MyRecipes from "./pages/MyRecipes";
 import Favorites from "./pages/Favorites";
+import ModerationPage from "./pages/ModerationPage";
 
 export default function App() {
   const initialize = useAuthStore((s) => s.initialize);
@@ -88,6 +89,14 @@ export default function App() {
             element={
               <AuthGuard>
                 <Favorites />
+              </AuthGuard>
+            }
+          />
+          <Route
+            path="/moderation"
+            element={
+              <AuthGuard>
+                <ModerationPage />
               </AuthGuard>
             }
           />
