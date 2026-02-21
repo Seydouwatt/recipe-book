@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { useParams, useNavigate, Link } from "react-router-dom";
+import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useAuthStore } from "../stores/authStore";
 import { useRecipeStore } from "../stores/recipeStore";
 import type { Ingredient } from "../types";
@@ -9,12 +9,15 @@ import StepInput from "../components/StepInput";
 export default function RecipeForm() {
   const { id } = useParams<{ id: string }>();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
   const user = useAuthStore((s) => s.user);
   const recipes = useRecipeStore((s) => s.recipes);
   const addRecipe = useRecipeStore((s) => s.addRecipe);
   const updateRecipe = useRecipeStore((s) => s.updateRecipe);
+  const deleteRecipe = useRecipeStore((s) => s.deleteRecipe);
 
   const isEdit = Boolean(id);
+  const fromModeration = searchParams.get("moderation") === "1";
 
   const [title, setTitle] = useState("");
   const [servings, setServings] = useState(4);
@@ -60,8 +63,9 @@ export default function RecipeForm() {
         tags,
         ingredients,
         steps,
+        ...(fromModeration ? { moderated: true } : {}),
       });
-      navigate(`/recipes/${id}`);
+      navigate(fromModeration ? "/moderation" : `/recipes/${id}`);
     } else {
       const newId = await addRecipe({
         title,
@@ -80,7 +84,7 @@ export default function RecipeForm() {
   return (
     <div className="mx-auto max-w-lg px-4 pb-24 pt-6">
       <Link
-        to={isEdit ? `/recipes/${id}` : "/recipes"}
+        to={fromModeration ? "/moderation" : isEdit ? `/recipes/${id}` : "/recipes"}
         className="mb-4 inline-block font-medium text-amber-500"
       >
         ← Retour
@@ -154,10 +158,28 @@ export default function RecipeForm() {
 
         <button
           type="submit"
-          className="w-full rounded-xl bg-amber-500 py-4 text-lg font-bold text-white active:bg-amber-600"
+          className={`w-full rounded-xl py-4 text-lg font-bold text-white ${
+            fromModeration
+              ? "bg-green-600 active:bg-green-700"
+              : "bg-amber-500 active:bg-amber-600"
+          }`}
         >
-          {isEdit ? "Enregistrer" : "Créer la recette"}
+          {fromModeration ? "Enregistrer et valider" : isEdit ? "Enregistrer" : "Créer la recette"}
         </button>
+
+        {fromModeration && id && (
+          <button
+            type="button"
+            onClick={async () => {
+              if (!confirm("Supprimer cette recette ?")) return;
+              await deleteRecipe(id);
+              navigate("/moderation");
+            }}
+            className="w-full rounded-xl bg-red-500 py-4 text-lg font-bold text-white active:bg-red-600"
+          >
+            Supprimer
+          </button>
+        )}
       </form>
     </div>
   );

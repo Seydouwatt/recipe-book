@@ -113,7 +113,7 @@ export default function ModerationPage() {
                     Valider
                   </button>
                   <Link
-                    to={`/recipes/${recipe.id}/edit`}
+                    to={`/recipes/${recipe.id}/edit?moderation=1`}
                     className="flex-1 rounded-lg bg-amber-500 py-1.5 text-center text-sm font-medium text-white active:bg-amber-600"
                   >
                     Editer
