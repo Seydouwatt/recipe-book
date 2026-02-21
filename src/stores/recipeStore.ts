@@ -16,6 +16,8 @@ interface RecipeState {
     id: string,
     userId: string,
   ) => Promise<string | null>;
+  moderateRecipe: (id: string) => Promise<void>;
+  moderateAll: (ids: string[]) => Promise<void>;
   setSearch: (query: string) => void;
   toggleTag: (tag: string) => void;
 }
@@ -90,6 +92,16 @@ export const useRecipeStore = create<RecipeState>((set, get) => ({
     if (!result) return null;
     await get().loadRecipes();
     return result.id;
+  },
+
+  moderateRecipe: async (id) => {
+    await supabase.from("recipes").update({ moderated: true }).eq("id", id);
+    await get().loadRecipes();
+  },
+
+  moderateAll: async (ids) => {
+    await supabase.from("recipes").update({ moderated: true }).in("id", ids);
+    await get().loadRecipes();
   },
 
   setSearch: (searchQuery) => set({ searchQuery }),

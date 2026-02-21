@@ -14,6 +14,7 @@ export interface Recipe {
   steps: string[];
   author_id: string | null;
   forked_from_id: string | null;
+  moderated: boolean;
   created_at: string;
   updated_at: string;
 }
