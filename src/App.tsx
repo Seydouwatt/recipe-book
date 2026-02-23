@@ -30,7 +30,7 @@ export default function App() {
   useEffect(() => {
     loadRecipes();
     loadFavoriteCounts();
-  }, [loadRecipes, loadFavoriteCounts]);
+  }, [user, loadRecipes, loadFavoriteCounts]);
 
   useEffect(() => {
     if (user) loadFavorites(user.id);
