@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { useParams, useNavigate, useSearchParams, Link } from "react-router-dom";
 import { useAuthStore } from "../stores/authStore";
 import { useRecipeStore } from "../stores/recipeStore";
+import { uploadRecipeImage, deleteRecipeImage } from "../lib/supabase";
 import type { Ingredient } from "../types";
 import IngredientInput from "../components/IngredientInput";
 import StepInput from "../components/StepInput";
@@ -27,6 +28,15 @@ export default function RecipeForm() {
     { name: "", qty: 0, unit: "" },
   ]);
   const [steps, setSteps] = useState<string[]>([""]);
+  const [imageFile, setImageFile] = useState<File | null>(null);
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [existingImageUrl, setExistingImageUrl] = useState<string | null>(null);
+
+  useEffect(() => {
+    return () => {
+      if (imagePreview) URL.revokeObjectURL(imagePreview);
+    };
+  }, [imagePreview]);
 
   useEffect(() => {
     if (isEdit) {
@@ -42,9 +52,28 @@ export default function RecipeForm() {
         setTagsInput(recipe.tags.join(", "));
         setIngredients(recipe.ingredients);
         setSteps(recipe.steps);
+        setExistingImageUrl(recipe.image_url ?? null);
       }
     }
   }, [id, isEdit, recipes, user, navigate]);
+
+  const handleImageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    if (!["image/jpeg", "image/png"].includes(file.type)) {
+      alert("Seuls les fichiers JPEG et PNG sont acceptés.");
+      e.target.value = "";
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert("L'image ne doit pas dépasser 5 Mo.");
+      e.target.value = "";
+      return;
+    }
+    if (imagePreview) URL.revokeObjectURL(imagePreview);
+    setImageFile(file);
+    setImagePreview(URL.createObjectURL(file));
+  };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -55,6 +84,17 @@ export default function RecipeForm() {
       .map((t) => t.trim())
       .filter(Boolean);
 
+    let finalImageUrl: string | null | undefined = undefined;
+    if (imageFile) {
+      const uploaded = await uploadRecipeImage(imageFile, user.id);
+      if (!uploaded) {
+        alert("Erreur lors du téléchargement de l'image. Veuillez réessayer.");
+        return;
+      }
+      if (isEdit && existingImageUrl) await deleteRecipeImage(existingImageUrl);
+      finalImageUrl = uploaded;
+    }
+
     if (isEdit && id) {
       await updateRecipe(id, {
         title,
@@ -64,6 +104,7 @@ export default function RecipeForm() {
         ingredients,
         steps,
         ...(fromModeration ? { moderated: true } : {}),
+        ...(finalImageUrl !== undefined ? { image_url: finalImageUrl } : {}),
       });
       navigate(fromModeration ? "/moderation" : `/recipes/${id}`);
     } else {
@@ -76,6 +117,7 @@ export default function RecipeForm() {
         steps,
         author_id: user.id,
         forked_from_id: null,
+        image_url: finalImageUrl ?? null,
       });
       if (newId) navigate(`/recipes/${newId}`);
     }
@@ -151,6 +193,26 @@ export default function RecipeForm() {
             className="mt-1 w-full rounded-xl border border-amber-200 px-4 py-3 text-lg"
             placeholder="dessert, chocolat, rapide"
           />
+        </div>
+
+        <div>
+          <label className="block text-sm font-semibold text-amber-900">
+            Photo (optionnel)
+          </label>
+          {(imagePreview || existingImageUrl) && (
+            <img
+              src={imagePreview ?? existingImageUrl!}
+              alt="Aperçu"
+              className="mt-2 h-48 w-full rounded-xl object-cover"
+            />
+          )}
+          <input
+            type="file"
+            accept="image/jpeg,image/png"
+            onChange={handleImageChange}
+            className="mt-2 w-full text-sm text-amber-700 file:mr-4 file:rounded-xl file:border-0 file:bg-amber-100 file:px-4 file:py-2 file:text-sm file:font-semibold file:text-amber-700"
+          />
+          <p className="mt-1 text-xs text-amber-500">JPEG ou PNG · 5 Mo max</p>
         </div>
 
         <IngredientInput ingredients={ingredients} onChange={setIngredients} />

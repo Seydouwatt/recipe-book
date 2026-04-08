@@ -75,6 +75,14 @@ export default function RecipeDetail() {
         ← Retour
       </Link>
 
+      {recipe.image_url && (
+        <img
+          src={recipe.image_url}
+          alt={recipe.title}
+          className="mb-6 h-56 w-full rounded-2xl object-cover shadow-md"
+        />
+      )}
+
       <div className="flex items-start justify-between">
         <h1 className="text-2xl font-bold text-amber-900">{recipe.title}</h1>
         <FavoriteButton recipeId={recipe.id} />

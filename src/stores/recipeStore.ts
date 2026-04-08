@@ -1,5 +1,5 @@
 import { create } from "zustand";
-import { supabase } from "../lib/supabase";
+import { supabase, deleteRecipeImage } from "../lib/supabase";
 import type { Recipe, RecipeInsert } from "../types";
 
 interface RecipeState {
@@ -59,6 +59,8 @@ export const useRecipeStore = create<RecipeState>((set, get) => ({
   },
 
   deleteRecipe: async (id) => {
+    const recipe = get().recipes.find((r) => r.id === id);
+    if (recipe?.image_url) await deleteRecipeImage(recipe.image_url);
     await supabase.from("recipes").delete().eq("id", id);
     await get().loadRecipes();
   },
@@ -81,6 +83,7 @@ export const useRecipeStore = create<RecipeState>((set, get) => ({
       steps: original.steps,
       author_id: userId,
       forked_from_id: id,
+      image_url: original.image_url ?? null,
     };
 
     const { data: result } = await supabase
